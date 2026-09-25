@@ -1,0 +1,97 @@
+{
+ "prompt": "Show the cheapest flight options and let the user pick one.",
+ "dataset": "empty",
+ "wanted": [],
+ "messages": [
+  {
+   "version": "v0.9",
+   "createSurface": {
+    "surfaceId": "flights",
+    "catalogId": "urn:storybook-a2ui:vibe:v1"
+   }
+  },
+  {
+   "version": "v0.9",
+   "updateComponents": {
+    "surfaceId": "flights",
+    "components": [
+     {
+      "id": "root",
+      "component": "Column",
+      "children": [
+       "title",
+       "none",
+       "actions"
+      ]
+     },
+     {
+      "id": "title",
+      "component": "Text",
+      "text": {
+       "path": "/route"
+      },
+      "variant": "h2"
+     },
+     {
+      "id": "none",
+      "component": "AttentionBox",
+      "type": "warning",
+      "title": "No flights found",
+      "text": "Nothing matches these dates. Try flexible dates or a nearby airport."
+     },
+     {
+      "id": "actions",
+      "component": "Row",
+      "children": [
+       "change",
+       "flex"
+      ]
+     },
+     {
+      "id": "change",
+      "component": "Button",
+      "variant": "primary",
+      "child": "change_l",
+      "action": {
+       "event": {
+        "name": "changeDates"
+       }
+      }
+     },
+     {
+      "id": "change_l",
+      "component": "Text",
+      "text": "Change dates"
+     },
+     {
+      "id": "flex",
+      "component": "Button",
+      "variant": "borderless",
+      "child": "flex_l",
+      "action": {
+       "event": {
+        "name": "flexibleDates"
+       }
+      }
+     },
+     {
+      "id": "flex_l",
+      "component": "Text",
+      "text": "Search \u00b13 days"
+     }
+    ]
+   }
+  },
+  {
+   "version": "v0.9",
+   "updateDataModel": {
+    "surfaceId": "flights",
+    "path": "/",
+    "value": {
+     "route": "Tel Aviv \u2192 London",
+     "flights": []
+    }
+   }
+  }
+ ]
+}

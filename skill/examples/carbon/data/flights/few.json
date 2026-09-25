@@ -1,0 +1,26 @@
+{
+ "route": "Tel Aviv \u2192 London",
+ "flights": [
+  {
+   "id": "LY315",
+   "airline": "El Al",
+   "times": "06:10 \u2192 09:55 \u00b7 5h 45m",
+   "stops": "Direct",
+   "price": "$412"
+  },
+  {
+   "id": "W6211",
+   "airline": "Wizz Air",
+   "times": "04:30 \u2192 08:40 \u00b7 6h 10m",
+   "stops": "Direct",
+   "price": "$189"
+  },
+  {
+   "id": "BA164",
+   "airline": "British Airways",
+   "times": "16:45 \u2192 20:30 \u00b7 5h 45m",
+   "stops": "Direct",
+   "price": "$455"
+  }
+ ]
+}

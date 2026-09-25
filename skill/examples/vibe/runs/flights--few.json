@@ -1,0 +1,166 @@
+{
+ "prompt": "Show the cheapest flight options and let the user pick one.",
+ "dataset": "few",
+ "wanted": [],
+ "messages": [
+  {
+   "version": "v0.9",
+   "createSurface": {
+    "surfaceId": "flights",
+    "catalogId": "urn:storybook-a2ui:vibe:v1"
+   }
+  },
+  {
+   "version": "v0.9",
+   "updateComponents": {
+    "surfaceId": "flights",
+    "components": [
+     {
+      "id": "root",
+      "component": "Column",
+      "children": [
+       "title",
+       "summary",
+       "list"
+      ]
+     },
+     {
+      "id": "title",
+      "component": "Text",
+      "text": {
+       "path": "/route"
+      },
+      "variant": "h2"
+     },
+     {
+      "id": "summary",
+      "component": "AttentionBox",
+      "type": "primary",
+      "title": "3 options found",
+      "text": "Sorted by price, cheapest first."
+     },
+     {
+      "id": "list",
+      "component": "Column",
+      "children": {
+       "path": "/flights",
+       "componentId": "card"
+      }
+     },
+     {
+      "id": "card",
+      "component": "Card",
+      "child": "body"
+     },
+     {
+      "id": "body",
+      "component": "Row",
+      "justify": "spaceBetween",
+      "align": "center",
+      "children": [
+       "info",
+       "price",
+       "select"
+      ]
+     },
+     {
+      "id": "info",
+      "component": "Column",
+      "children": [
+       "airline",
+       "times",
+       "stops"
+      ]
+     },
+     {
+      "id": "airline",
+      "component": "Text",
+      "text": {
+       "path": "airline"
+      },
+      "variant": "h4"
+     },
+     {
+      "id": "times",
+      "component": "Text",
+      "text": {
+       "path": "times"
+      },
+      "variant": "caption"
+     },
+     {
+      "id": "stops",
+      "component": "Label",
+      "text": {
+       "path": "stops"
+      },
+      "color": "positive",
+      "kind": "line"
+     },
+     {
+      "id": "price",
+      "component": "Text",
+      "text": {
+       "path": "price"
+      },
+      "variant": "h3"
+     },
+     {
+      "id": "select",
+      "component": "Button",
+      "variant": "primary",
+      "child": "select_l",
+      "action": {
+       "event": {
+        "name": "selectFlight",
+        "context": {
+         "flightId": {
+          "path": "id"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "select_l",
+      "component": "Text",
+      "text": "Select"
+     }
+    ]
+   }
+  },
+  {
+   "version": "v0.9",
+   "updateDataModel": {
+    "surfaceId": "flights",
+    "path": "/",
+    "value": {
+     "route": "Tel Aviv \u2192 London",
+     "flights": [
+      {
+       "id": "LY315",
+       "airline": "El Al",
+       "times": "06:10 \u2192 09:55 \u00b7 5h 45m",
+       "stops": "Direct",
+       "price": "$412"
+      },
+      {
+       "id": "W6211",
+       "airline": "Wizz Air",
+       "times": "04:30 \u2192 08:40 \u00b7 6h 10m",
+       "stops": "Direct",
+       "price": "$189"
+      },
+      {
+       "id": "BA164",
+       "airline": "British Airways",
+       "times": "16:45 \u2192 20:30 \u00b7 5h 45m",
+       "stops": "Direct",
+       "price": "$455"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

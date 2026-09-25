@@ -1,0 +1,9 @@
+{
+ "user": {
+  "name": "Dana Levi",
+  "email": "dana@example.com",
+  "plan": "Pro",
+  "newsletter": true,
+  "twoFactor": false
+ }
+}

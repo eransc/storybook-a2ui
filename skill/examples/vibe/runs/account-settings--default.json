@@ -1,0 +1,180 @@
+{
+ "prompt": "Let the user edit their profile and security settings.",
+ "dataset": "default",
+ "wanted": [
+  "Select (to change plan)"
+ ],
+ "messages": [
+  {
+   "version": "v0.9",
+   "createSurface": {
+    "surfaceId": "account",
+    "catalogId": "urn:storybook-a2ui:vibe:v1"
+   }
+  },
+  {
+   "version": "v0.9",
+   "updateComponents": {
+    "surfaceId": "account",
+    "components": [
+     {
+      "id": "root",
+      "component": "Column",
+      "children": [
+       "title",
+       "tabs"
+      ]
+     },
+     {
+      "id": "title",
+      "component": "Text",
+      "text": "Account settings",
+      "variant": "h2"
+     },
+     {
+      "id": "tabs",
+      "component": "Tabs",
+      "tabs": [
+       {
+        "title": "Profile",
+        "child": "profile"
+       },
+       {
+        "title": "Security",
+        "child": "security"
+       }
+      ]
+     },
+     {
+      "id": "profile",
+      "component": "Column",
+      "children": [
+       "name",
+       "email",
+       "plan_row",
+       "news",
+       "save"
+      ]
+     },
+     {
+      "id": "name",
+      "component": "TextField",
+      "label": "Full name",
+      "value": {
+       "path": "/user/name"
+      }
+     },
+     {
+      "id": "email",
+      "component": "TextField",
+      "label": "Email",
+      "value": {
+       "path": "/user/email"
+      }
+     },
+     {
+      "id": "plan_row",
+      "component": "Row",
+      "align": "center",
+      "children": [
+       "plan_l",
+       "plan"
+      ]
+     },
+     {
+      "id": "plan_l",
+      "component": "Text",
+      "text": "Current plan"
+     },
+     {
+      "id": "plan",
+      "component": "Label",
+      "text": {
+       "path": "/user/plan"
+      },
+      "color": "purple"
+     },
+     {
+      "id": "news",
+      "component": "CheckBox",
+      "label": "Send me the monthly newsletter",
+      "value": {
+       "path": "/user/newsletter"
+      }
+     },
+     {
+      "id": "save",
+      "component": "Button",
+      "variant": "primary",
+      "child": "save_l",
+      "action": {
+       "event": {
+        "name": "saveProfile"
+       }
+      }
+     },
+     {
+      "id": "save_l",
+      "component": "Text",
+      "text": "Save changes"
+     },
+     {
+      "id": "security",
+      "component": "Column",
+      "children": [
+       "tfa",
+       "pw",
+       "sec_save"
+      ]
+     },
+     {
+      "id": "tfa",
+      "component": "Toggle",
+      "label": "Two-factor authentication",
+      "value": {
+       "path": "/user/twoFactor"
+      }
+     },
+     {
+      "id": "pw",
+      "component": "TextField",
+      "label": "New password",
+      "variant": "obscured"
+     },
+     {
+      "id": "sec_save",
+      "component": "Button",
+      "variant": "primary",
+      "child": "sec_l",
+      "action": {
+       "event": {
+        "name": "saveSecurity"
+       }
+      }
+     },
+     {
+      "id": "sec_l",
+      "component": "Text",
+      "text": "Update security"
+     }
+    ]
+   }
+  },
+  {
+   "version": "v0.9",
+   "updateDataModel": {
+    "surfaceId": "account",
+    "path": "/",
+    "value": {
+     "user": {
+      "name": "Dana Levi",
+      "email": "dana@example.com",
+      "plan": "Pro",
+      "newsletter": true,
+      "twoFactor": false
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+{
+  "maxDepth": 10,
+  "maxComponents": 60,
+  "forbidNesting": [["Card", "Card"], ["Button", "Button"]],
+  "requireProps": { "Button": ["action"], "TextField": ["label"] },
+  "preferTable": { "component": "Table", "minItems": 7 },
+  "banned": []
+}

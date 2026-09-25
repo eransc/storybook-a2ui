@@ -1,0 +1,103 @@
+{
+ "route": "Tel Aviv \u2192 London",
+ "flights": [
+  {
+   "id": "LY100",
+   "airline": "El Al",
+   "times": "04:00 \u2192 09:00 \u00b7 5h 0m",
+   "stops": "Direct",
+   "price": "$150"
+  },
+  {
+   "id": "FR135",
+   "airline": "Ryanair",
+   "times": "09:05 \u2192 16:25 \u00b7 7h 25m",
+   "stops": "2 stops",
+   "price": "$165"
+  },
+  {
+   "id": "BA170",
+   "airline": "British Airways",
+   "times": "14:10 \u2192 20:50 \u00b7 6h 50m",
+   "stops": "1 stop",
+   "price": "$180"
+  },
+  {
+   "id": "W6107",
+   "airline": "Wizz Air",
+   "times": "05:13 \u2192 11:29 \u00b7 6h 17m",
+   "stops": "1 stop",
+   "price": "$233"
+  },
+  {
+   "id": "A3142",
+   "airline": "Aegean",
+   "times": "10:18 \u2192 15:54 \u00b7 5h 42m",
+   "stops": "Direct",
+   "price": "$248"
+  },
+  {
+   "id": "U2177",
+   "airline": "easyJet",
+   "times": "15:23 \u2192 22:19 \u00b7 7h 7m",
+   "stops": "2 stops",
+   "price": "$263"
+  },
+  {
+   "id": "BA114",
+   "airline": "British Airways",
+   "times": "06:26 \u2192 13:58 \u00b7 7h 34m",
+   "stops": "2 stops",
+   "price": "$316"
+  },
+  {
+   "id": "TK149",
+   "airline": "Turkish Airlines",
+   "times": "11:31 \u2192 17:23 \u00b7 6h 59m",
+   "stops": "1 stop",
+   "price": "$331"
+  },
+  {
+   "id": "LH184",
+   "airline": "Lufthansa",
+   "times": "16:36 \u2192 21:48 \u00b7 5h 24m",
+   "stops": "Direct",
+   "price": "$346"
+  },
+  {
+   "id": "U2121",
+   "airline": "easyJet",
+   "times": "07:39 \u2192 12:27 \u00b7 5h 51m",
+   "stops": "Direct",
+   "price": "$399"
+  },
+  {
+   "id": "LY156",
+   "airline": "El Al",
+   "times": "12:44 \u2192 19:52 \u00b7 7h 16m",
+   "stops": "2 stops",
+   "price": "$414"
+  },
+  {
+   "id": "FR191",
+   "airline": "Ryanair",
+   "times": "17:49 \u2192 23:17 \u00b7 6h 41m",
+   "stops": "1 stop",
+   "price": "$429"
+  },
+  {
+   "id": "LH128",
+   "airline": "Lufthansa",
+   "times": "08:52 \u2192 14:56 \u00b7 6h 8m",
+   "stops": "1 stop",
+   "price": "$482"
+  },
+  {
+   "id": "W6163",
+   "airline": "Wizz Air",
+   "times": "13:57 \u2192 18:21 \u00b7 5h 33m",
+   "stops": "Direct",
+   "price": "$497"
+  }
+ ]
+}
