@@ -107,6 +107,8 @@ Report to the user:
 | `requireProps: {Component: [prop]}`  | error when missing (e.g. Button needs `action`)  |
 | `preferTable: {component, minItems}` | warn when a template repeats ≥ minItems items    |
 | `banned: [Component]`                | error on use                                     |
+| `limits: [{component, where, max, per}]` | error when more than `max` match per `section` (or `surface`) — e.g. **one primary Button per section**. Sections: root, each `sectionBoundaries` component (default Card, Tabs), each Tabs panel, each repeated template item |
+| `requireBinding: {props, flagCopiedData}` | error when a listed prop (e.g. `DataTable.rows`) is a literal instead of `{path}`; warn when a literal string equals a value in the data (copied instead of bound) |
 
 Propose new rules from real runs; do not invent rules the runs never needed.
 

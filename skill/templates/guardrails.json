@@ -4,5 +4,8 @@
   "forbidNesting": [["Card", "Card"], ["Button", "Button"]],
   "requireProps": { "Button": ["action"], "TextField": ["label"] },
   "preferTable": { "component": "DataTable", "minItems": 7 },
+  "limits": [{ "component": "Button", "where": { "variant": "primary" }, "max": 1, "per": "section" }],
+  "sectionBoundaries": ["Card", "Tabs"],
+  "requireBinding": { "props": { "DataTable": ["rows"] }, "flagCopiedData": true },
   "banned": []
 }

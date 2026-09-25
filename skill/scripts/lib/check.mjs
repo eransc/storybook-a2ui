@@ -1,6 +1,8 @@
 // Validate one A2UI v0.9 run (message stream) against a catalog + guardrails.
 // Returns { errors, warnings, usage, depth, count } — no rendering, pure data checks.
 
+import { checkLimits, checkRequireBinding } from "./guardrails.mjs";
+
 const FRAMEWORK_KEYS = new Set(["id", "component"]);
 const REF_KEYS = ["child", "content", "trigger"];
 
@@ -175,6 +177,11 @@ export function checkRun(run, catalog, guardrails = {}) {
     errors.push(
       `guardrail: ${components.size} components > maxComponents ${guardrails.maxComponents}`,
     );
+
+  // v1.1 guardrails (see guardrails.mjs)
+  const binding = checkRequireBinding(components, data, guardrails.requireBinding);
+  errors.push(...binding.errors, ...checkLimits(components, guardrails).errors);
+  warnings.push(...binding.warnings);
 
   return { errors, warnings, usage, depth: maxDepth, count: components.size };
 }

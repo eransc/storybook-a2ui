@@ -53,7 +53,7 @@ skill/examples/vibe/           reference catalog + runs + screenshots (monday.co
 
 ## Compatibility
 
-**Skill version: v1.0.0**
+**Skill version: v1.1.0**
 
 | | Version | Notes |
 |---|---|---|
@@ -72,6 +72,12 @@ Tested on: IBM **Carbon** (Storybook 10.3, React 19), monday.com **Vibe** (Story
 
 When A2UI moves past v0.9, the install command in `SKILL.md` step 2 and the `/v0_9` imports in the
 templates and examples are what change.
+
+## Changelog
+
+- **v1.1.0** — two guardrails: `limits` (e.g. one primary Button per section) and `requireBinding`
+  (table rows must be bound; warns when data is copied into the UI as literals).
+- **v1.0.0** — skill, `describe` / `check` / `stories` / `coverage`, Carbon + Vibe examples.
 
 ## Coverage report
 
