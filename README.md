@@ -51,10 +51,27 @@ skill/examples/carbon/         reference catalog + runs + screenshots (IBM Carbo
 skill/examples/vibe/           reference catalog + runs + screenshots (monday.com Vibe, flexbox)
 ```
 
-## Status
+## Compatibility
 
-v1 spike, React only, A2UI v0.9 (`@a2ui/react` 0.11). The renderer is written per design system
-from the recipe (not auto-generated yet).
+**Skill version: v1.0.0**
+
+| | Version | Notes |
+|---|---|---|
+| **A2UI protocol** | **v0.9** | messages carry `"version": "v0.9"`; the protocol is pre-1.0 and may change |
+| `@a2ui/react` | **0.11.1** | official renderer, imported from `@a2ui/react/v0_9` |
+| `@a2ui/web_core` | **0.11.0** | schemas, `Catalog`, `MessageProcessor` (`/v0_9`, `/v0_9/basic_catalog`) |
+| Storybook | 9.1 · 10.3 · 10.5 tested | React renderer only (`@storybook/react-vite`) |
+| React | 18.3 · 19.2 tested | |
+| zod | 3.25 | comes with `@a2ui/*`; may be a second copy (see recipe §5) |
+| TypeScript | 5.7 · 5.9 · 6.0 | TS ≥ 6 needs `--ignoreConfig` for the type-check step |
+| Node | 24 | scripts use native `fetch` (Node ≥ 18) |
+| Playwright | any `@playwright/test` on the machine | optional, for screenshots; uses installed Chrome |
+
+Tested on: IBM **Carbon** (Storybook 10.3, React 19), monday.com **Vibe** (Storybook 10.5, React 19),
+**Optimove** react-ui (Storybook 9.1, React 18).
+
+When A2UI moves past v0.9, the install command in `SKILL.md` step 2 and the `/v0_9` imports in the
+templates and examples are what change.
 
 ## Coverage report
 
