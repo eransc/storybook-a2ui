@@ -1,3 +1,4 @@
+import { computeAlerts, renderAlerts } from "./coverage-alerts.mjs";
 // Catalog coverage: compare the design system (Storybook index) with the A2UI catalog
 // and the agent's runs, and turn every gap into an action the user can take.
 //
@@ -19,33 +20,55 @@ const wordRe = (name) =>
  * `componentPath` (the real component file); story titles nest arbitrarily
  * (e.g. "Components/Table/Basic"), so the title is only a fallback.
  */
-export function dsComponentsFromIndex(index, section = "A2UI Playground") {
+// Generated sections ("A2UI Playground", "A2UI Patterns", …) are our own output, never DS components.
+export function dsComponentsFromIndex(index, section = /^A2UI( |\/|$)/) {
   const stories = Object.values(index.entries ?? index.stories ?? {}).filter(
-    (e) => (!e.type || e.type === "story") && !e.title.startsWith(section),
+    (e) => (!e.type || e.type === "story") && !section.test(e.title),
   );
   const segs = (title) => title.split("/").map((x) => norm(x));
   // Name from componentPath, accepted only when it also appears in the story title.
   // Rejects package barrels (e.g. stories importing from a package root → ".../dist/src/index.js" → "src").
   const fromPath = (e) => {
-    if (!e.componentPath) return null;
-    const parts = e.componentPath.split("/");
-    const file = parts.pop().replace(/\.[^.]+$/, "");
-    const name = file === "index" ? parts.pop() : file;
+    // componentPath when it is a real file; a package specifier ("@scope/pkg", a barrel) says nothing.
+    const isFile = (p) => !!p && /\.[jt]sx?$|\/index$/.test(p);
+    const path = isFile(e.componentPath) ? e.componentPath : e.importPath;
+    if (!path) return null;
+    const parts = path.split("/");
+    // "FileUpload.stories.tsx" → "FileUpload", "ComboBox.featureflag.stories.js" → "ComboBox".
+    const file = path === e.componentPath
+      ? parts.pop().replace(/\.[^.]+$/, "")
+      : parts.pop().split(".")[0];
+    const dir = parts.pop();
+    const name = file === "index" ? dir : file;
     if (!name) return null;
+    const titleSegs = segs(e.title);
+    // Prefer an EXACT title segment: the file ("Button"), else its folder ("Modal/ModalBasicLayout…"
+    // → "Modal", "Dropdown/DropdownBoxMode…" → "Dropdown").
+    // A variant story file inside the component's folder ("Dropdown/DropdownBoxMode") → the folder.
+    if (dir && norm(name) !== norm(dir) && norm(name).startsWith(norm(dir)) && titleSegs.includes(norm(dir)))
+      return dir;
+    if (titleSegs.includes(norm(name))) return name;
+    if (dir && titleSegs.includes(norm(dir))) return dir;
     const n = norm(name);
     // Loose on purpose: "Notification" ⊂ "Notifications", "DatePicker" ⊂ "preview__DatePicker".
-    const inTitle = segs(e.title).some((t) => n.length >= 3 && (t.includes(n) || (t.length >= 3 && n.includes(t))));
+    const inTitle = titleSegs.some(
+      (t) =>
+        n.length >= 3 && (t.includes(n) || (t.length >= 3 && n.includes(t))),
+    );
     return inTitle ? name : null;
   };
   const named = stories.map((e) => ({ e, name: fromPath(e) }));
   // If most stories resolve by path, path-less leftovers are variants/docs
   // (e.g. ".../Feature Flag"), not components — skip them.
-  const pathRatio = named.filter((x) => x.name).length / Math.max(1, named.length);
+  const pathRatio =
+    named.filter((x) => x.name).length / Math.max(1, named.length);
   const byName = new Map();
   for (const { e, name: pathName } of named) {
-    const name = pathName ?? (pathRatio < 0.8 ? e.title.split("/").pop().trim() : null);
+    const name =
+      pathName ?? (pathRatio < 0.8 ? e.title.split("/").pop().trim() : null);
     if (!name) continue;
-    if (!byName.has(name)) byName.set(name, { name, title: e.title, hook: /^use[A-Z]/.test(name) });
+    if (!byName.has(name))
+      byName.set(name, { name, title: e.title, hook: /^use[A-Z]/.test(name) });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -65,8 +88,9 @@ function catalogSources(catalog, ds) {
     }
     const n = norm(name);
     const exact = ds.find((c) => norm(c.name) === n);
-    if (exact) out.set(name, { kind: 'ds', component: exact.name, declared: false });
-    else out.set(name, { kind: 'unknown', declared: false });
+    if (exact)
+      out.set(name, { kind: "ds", component: exact.name, declared: false });
+    else out.set(name, { kind: "unknown", declared: false });
   }
   return out;
 }
@@ -74,13 +98,17 @@ function catalogSources(catalog, ds) {
 /** Classify one agent "wanted" entry against catalog and DS. */
 function classifyWanted(w, catalogNames, dsNotInCatalog) {
   const longestFirst = (a, b) => b.length - a.length;
-  const inCatalog = [...catalogNames].sort(longestFirst).find((n) => wordRe(n).test(w));
+  const inCatalog = [...catalogNames]
+    .sort(longestFirst)
+    .find((n) => wordRe(n).test(w));
   if (inCatalog)
     return {
       verdict: `capability gap in catalog component ${inCatalog}`,
       action: `extend ${inCatalog} or add a semantic component`,
     };
-  const inDs = [...dsNotInCatalog].sort((a, b) => b.name.length - a.name.length).find((c) => wordRe(c.name).test(w));
+  const inDs = [...dsNotInCatalog]
+    .sort((a, b) => b.name.length - a.name.length)
+    .find((c) => wordRe(c.name).test(w));
   if (inDs)
     return {
       verdict: `exists in DS (${inDs.title}), not in catalog`,
@@ -89,11 +117,18 @@ function classifyWanted(w, catalogNames, dsNotInCatalog) {
     };
   return {
     verdict: "no component with this name in this Storybook",
-    action: "check for a synonym (e.g. Select ↔ Dropdown); if none, it is a DS gap",
+    action:
+      "check for a synonym (e.g. Select ↔ Dropdown); if none, it is a DS gap",
   };
 }
 
-export function buildCoverage({ catalog, index, runs }) {
+export function buildCoverage({
+  catalog,
+  index,
+  runs,
+  figma = new Map(),
+  mappedFigma = new Set(),
+}) {
   const ds = dsComponentsFromIndex(index);
   const sources = catalogSources(catalog, ds);
   const backed = new Set(
@@ -132,6 +167,14 @@ export function buildCoverage({ catalog, index, runs }) {
     wantedRows,
     wantedDs,
     limitations: catalog.limitations ?? [],
+    alerts: computeAlerts({
+      ds,
+      sources,
+      dsNotInCatalog,
+      excluded,
+      usage: figma,
+      mappedFigma,
+    }),
   };
 }
 
@@ -145,13 +188,16 @@ export function renderCoverage(cov, { catalogId, runCount }) {
     wantedRows,
     wantedDs,
     limitations,
+    alerts,
   } = cov;
   const real = ds.filter((c) => !c.hook);
   const tokens = [...sources].filter(([, s]) => s.kind === "tokens");
   const unknown = [...sources].filter(([, s]) => s.kind === "unknown");
   const L = [];
   // With undeclared sources, "0 built from tokens" would be a false negative — say "?" instead.
-  const undeclaredCount = [...sources.values()].filter((x) => !x.declared).length;
+  const undeclaredCount = [...sources.values()].filter(
+    (x) => !x.declared,
+  ).length;
   L.push("# A2UI catalog coverage", "");
   L.push(`Catalog \`${catalogId}\` · ${runCount} runs`, "");
   L.push(
@@ -164,6 +210,7 @@ export function renderCoverage(cov, { catalogId, runCount }) {
       `> ⚠ ${undeclared} of ${sources.size} catalog entries have no declared source, so these counts are **approximate**. Declare \`CATALOG_SOURCES\` in catalog.schema.ts for an exact report.`,
       "",
     );
+  L.push(...renderAlerts(alerts));
 
   L.push(
     "## 1. Catalog → design system",
@@ -174,7 +221,9 @@ export function renderCoverage(cov, { catalogId, runCount }) {
   const dsNames = new Set(ds.map((c) => c.name));
   const missingInSb = (s) => {
     const gone = [].concat(s.component ?? []).filter((c) => !dsNames.has(c));
-    return gone.length ? ` — ⚠ ${gone.join(", ")} ${gone.length > 1 ? "have" : "has"} no story in this Storybook` : "";
+    return gone.length
+      ? ` — ⚠ ${gone.join(", ")} ${gone.length > 1 ? "have" : "has"} no story in this Storybook`
+      : "";
   };
   for (const [name, s] of sources) {
     const by =
@@ -194,23 +243,37 @@ export function renderCoverage(cov, { catalogId, runCount }) {
     "|---|---|---|---|",
   );
   const rank = (c) => (wantedDs.has(c.name) ? 0 : excluded[c.name] ? 1 : 2);
-  const rows = [...dsNotInCatalog].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+  const rows = [...dsNotInCatalog].sort(
+    (a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name),
+  );
   const row = (c) => {
     const n = wantedDs.get(c.name);
     const reason = excluded[c.name];
     const status = reason ? `excluded: ${reason}` : "not reviewed";
-    const action = n ? "**add to catalog**" : reason ? "—" : "decide: add, or exclude with a reason";
+    const action = n
+      ? "**add to catalog**"
+      : reason
+        ? "—"
+        : "decide: add, or exclude with a reason";
     return `| ${c.name} | ${n ? `yes ×${n}` : ""} | ${status} | ${action} |`;
   };
   rows.filter((c) => rank(c) < 2).forEach((c) => L.push(row(c)));
   const notReviewed = rows.filter((c) => rank(c) === 2);
   if (notReviewed.length) {
-    L.push("", `<details><summary>${notReviewed.length} more not reviewed (no reason given)</summary>`, "");
-    L.push("| Component | Agent wanted it | Status | Action |", "|---|---|---|---|");
+    L.push(
+      "",
+      `<details><summary>${notReviewed.length} more not reviewed (no reason given)</summary>`,
+      "",
+    );
+    L.push(
+      "| Component | Agent wanted it | Status | Action |",
+      "|---|---|---|---|",
+    );
     notReviewed.forEach((c) => L.push(row(c)));
     L.push("", "</details>");
   }
-  if (!dsNotInCatalog.length) L.push("| — | | every DS component is in the catalog | |");
+  if (!dsNotInCatalog.length)
+    L.push("| — | | every DS component is in the catalog | |");
 
   L.push(
     "",

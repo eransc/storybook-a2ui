@@ -45,7 +45,13 @@ If `<a2ui dir>/catalog.schema.ts` already exists, skip to step 3.
   afterwards and restart it with the project's own command.
 - Copy `SKILL_DIR/templates/A2uiPlayground.tsx` and `SKILL_DIR/templates/guardrails.json` into the A2UI dir.
 - Write `catalog.schema.ts` + `catalog.tsx` following **`SKILL_DIR/references/catalog-recipe.md`** — read it fully first.
-  Curate 8–15 components; confirm the list with the user when the Storybook is large.
+  Curate **by category** (recipe §1): layout + primitives, page structure (headers, breadcrumbs, side nav),
+  form controls, data display, feedback, icons. **Never rebuild from tokens a component the DS already has.**
+  Confirm the list with the user when the Storybook is large.
+- **Coverage gate (required before the first run):** run `coverage` with `--figma <dir> --map figma-map.json`
+  when design trees exist (see `figma-to-a2ui.md`), and show the user every 🔴 alert: a component used in their
+  designs that exists in Storybook but is missing from the catalog. Add it, or exclude it with a reason, before
+  authoring — a catalog missing page-level components produces pages that can't match the designs.
 - In `catalog.schema.ts` also export the **coverage metadata** (recipe §8) — required, not optional:
   `CATALOG_SOURCES` (which DS component backs each entry, or `tokens` if you built it from CSS),
   `CATALOG_EXCLUDED` (DS components you left out, with a reason), `CATALOG_LIMITATIONS` (what the agent can't express).
@@ -70,6 +76,9 @@ extract 2–5 patterns into `<a2ui dir>/patterns/<name>.json`, then:
 ```bash
 node SKILL_DIR/scripts/a2ui.mjs patterns --schema $S/catalog.schema.ts --dir $S/patterns --guardrails $S/guardrails.json --out $S
 ```
+**From Figma automatically:** follow **`SKILL_DIR/references/figma-to-a2ui.md`** — write `figma-map.json` once,
+extract each frame (read-only, Figma MCP), then `a2ui.mjs from-figma`; write `whenToUse`, then run `patterns`.
+
 This validates every pattern against the catalog and guardrails and generates one story per pattern under
 **A2UI Patterns / <Name>** (docs page: when to use, source link, what the catalog can't express yet).
 The stories import the JSON, so editing a pattern updates Storybook live. Compare each story with its source

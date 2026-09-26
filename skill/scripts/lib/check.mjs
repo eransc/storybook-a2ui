@@ -2,9 +2,9 @@
 // Returns { errors, warnings, usage, depth, count } — no rendering, pure data checks.
 
 import { checkLimits, checkRequireBinding } from "./guardrails.mjs";
+import { childRefs } from "./refs.mjs";
 
 const FRAMEWORK_KEYS = new Set(["id", "component"]);
-const REF_KEYS = ["child", "content", "trigger"];
 
 /** Minimal JSON Pointer get/set for the data model. */
 function pointer(path) {
@@ -100,7 +100,7 @@ export function checkRun(run, catalog, guardrails = {}) {
         errors.push(`guardrail: "${c.id}" (${c.component}) must set "${prop}"`);
     }
     // Built-in a11y: a control with an empty label has no accessible name.
-    if (c.label === "")
+    if (c.label === "" && !c.accessibility?.label)
       warnings.push(
         `a11y: "${c.id}" (${c.component}) has an empty label — screen readers announce it with no name; bind or write a real label`,
       );
@@ -133,8 +133,9 @@ export function checkRun(run, catalog, guardrails = {}) {
           `guardrail: ${ch} "${id}" directly inside ${p} "${parent.id}"`,
         );
     }
+    const slotProps = new Set(childRefs(c, components).templates.map((t) => t.prop));
     for (const b of bindings(
-      Object.fromEntries(Object.entries(c).filter(([k]) => k !== "children")),
+      Object.fromEntries(Object.entries(c).filter(([k]) => !slotProps.has(k))),
     )) {
       if (scope === null) continue; // inside an empty template: cannot check
       if (getAt(data, resolvePath(b, scope)) === undefined)
@@ -143,14 +144,11 @@ export function checkRun(run, catalog, guardrails = {}) {
         );
     }
     const next = [...stack, id];
-    for (const k of REF_KEYS)
-      if (typeof c[k] === "string") walk(c[k], scope, depth + 1, next);
-    for (const t of c.tabs ?? [])
-      if (typeof t.child === "string") walk(t.child, scope, depth + 1, next);
-    if (Array.isArray(c.children))
-      c.children.forEach((ch) => walk(ch, scope, depth + 1, next));
-    else if (c.children?.componentId) {
-      const listPath = resolvePath(c.children.path, scope ?? "");
+    const { refs, templates, tabs } = childRefs(c, components);
+    for (const r of refs) walk(r.id, scope, depth + 1, next);
+    for (const t of tabs) walk(t, scope, depth + 1, next);
+    for (const t of templates) {
+      const listPath = resolvePath(t.path, scope ?? "");
       const list = scope === null ? undefined : getAt(data, listPath);
       if (scope !== null && !Array.isArray(list))
         warnings.push(
@@ -162,7 +160,7 @@ export function checkRun(run, catalog, guardrails = {}) {
           `guardrail: "${id}" repeats ${list.length} items — prefer ${min.component}`,
         );
       walk(
-        c.children.componentId,
+        t.componentId,
         Array.isArray(list) && list.length ? `${listPath}/0` : null,
         depth + 1,
         next,

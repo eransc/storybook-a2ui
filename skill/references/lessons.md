@@ -11,6 +11,7 @@ Read at step 1. Each line cost a re-render or a wrong claim on a real design sys
 - [ ] **Story ids**: `stories` prints the real ids. Storybook splits letters from digits in export names (`A1` → `a-1`), so don't hand-build ids.
 
 ## Catalog
+- [ ] **Page-level components missing from the catalog** (a real case: page header, section header, breadcrumbs, dropdown, file upload, icon all existed in Storybook; the catalog rebuilt headers from Row/Text and lost the DS spacing). Curate by category; run the coverage gate with design trees before the first run.
 
 - [ ] **Read real props** (package metadata JSON if shipped, `.d.ts`, a story). Never guess.
 - [ ] **Check the Storybook index before saying "the DS has no X"** — a component can exist under a nested title.

@@ -7,19 +7,36 @@ Two files in `<a2ui dir>/` (worked references: `SKILL_DIR/examples/`):
 | `catalog.schema.ts` | `CATALOG_ID`, `CATALOG_APIS` — zod schemas only, **no React, no CSS** | `catalog.tsx`, the checker (Node) |
 | `catalog.tsx`       | `export const catalog = new Catalog(CATALOG_ID, [...impls])`          | `A2uiPlayground.tsx`              |
 
-## 1. Curate — 8 to 15 components, not the whole Storybook
+## 1. Curate by category — cover what real pages are made of
 
-An agent catalog is a vocabulary, not an inventory. Read the Storybook index
-(`curl <storybook>/index.json`) and pick:
+An agent catalog is a vocabulary, not an inventory — but it must cover every **kind** of thing the team's
+pages use, or agents rebuild it badly from primitives. Read the Storybook index (`curl <storybook>/index.json`)
+and pick, per category:
 
-- **Layout + primitives under the standard A2UI names** — `Row`, `Column`, `Text`,
-  `Card`, `Button`, `TextField`, `CheckBox`, `Tabs`, `Divider`. Reuse the OFFICIAL schemas
-  (`RowApi`, `ColumnApi`, … from `@a2ui/web_core/v0_9/basic_catalog`) and render them with
-  the DS's own components. Agents already speak these names; output looks like the DS.
-- **3–6 DS extensions** that carry meaning the basics can't: status (Tag/Badge),
-  feedback (notification/alert), dense data (a table), etc. Define their schema with
-  `z.object({...}).strict().describe('when to use it')` — the description is what the
-  agent reads, so write _when to use_, not _what it is_.
+| Category | Examples | Rule |
+|---|---|---|
+| Layout + primitives | `Row`, `Column`, `Text`, `Card`, `Button`, `TextField`, `CheckBox`, `Tabs`, `Divider` | standard A2UI names with the OFFICIAL schemas (`RowApi`, … from `@a2ui/web_core/v0_9/basic_catalog`), rendered with the DS's components |
+| **Page structure** | page header, section header, breadcrumbs, side / vertical navigation | if the DS has it, **expose it** (extension) — never rebuild it from Row/Text |
+| Form controls | select / dropdown, input, file upload, toggle, checkbox, radio | expose every one the DS has |
+| Data display | table, list, avatar, badge / tag, progress | expose; a table beats Rows with weights |
+| Feedback | notification / alert, empty state, modal | expose; overlays may be excluded with a reason |
+| Icons | icon | expose if the DS has one — designs are full of them |
+
+**Never synthesize what the design system already has.** Build from tokens (`kind: 'tokens'`) only when the
+DS has no component for the role, and say so in `CATALOG_SOURCES`. If the DS component exists but is
+**unusable** from A2UI (hard-coded demo content, no way to pass children, needs app state), put it in
+`CATALOG_EXCLUDED` with that reason and build the tokens version under its own name — coverage then accepts
+the rebuild instead of alerting. Scenario needs are not the curation
+criterion: a component the demo doesn't need today is still one the team's pages use.
+
+Extensions: `z.object({...}).strict().describe('when to use it')` — the description is what the agent reads,
+so write _when to use_, not _what it is_.
+
+**Containers that only accept their own children** (a menu that drops anything but its menu items, a
+breadcrumb bar of breadcrumb items, a select of options): A2UI child ids can't be used there. Wrap them with a
+**data-driven** extension instead — `Menu({ items: [{ label, icon? }] })` renders the typed children itself.
+So the three options are: wrap it (children = A2UI ids), wrap it data-driven, or — only if the DS has none —
+build it from tokens.
 
 Ask the user which components matter if the Storybook is large or unfamiliar.
 
@@ -76,7 +93,9 @@ The DS may lack a standard name (e.g. no Card): map it to the nearest surface
   `justify/align` are flex semantics. For a vertical grid map `justify → align-content`
   and `align → justify-items`; `justify-content: start` on a vertical grid shrinks the
   column to its content. Horizontal: `justify → justify-content`, `align → align-items`.
-- Give Row/Column `width: 100%` so `spaceBetween` has room.
+- `spaceBetween` needs room: a Column's children stretch by default; a Row that is a **child of a Column**
+  should fill the width (`align-self: stretch`). Do NOT give every Row/Column `width: 100%` — side-by-side
+  children of a Row then split 50/50 and ignore `weight` (§3).
 - **Intrinsic-width components** (tags, buttons) stretch inside a stretching column —
   wrap them in a plain `<div>`.
 - Headings: use the DS's heading component/levels for `Text` `h1–h5`, a body style otherwise.
@@ -86,6 +105,9 @@ The DS may lack a standard name (e.g. no Card): map it to the nearest surface
   color, so a `Text` inside a primary `Button` turned dark-on-blue → body text `color="inherit"`.
 - **Built-in labels** (a toggle that renders its own "Off/On"): hide them (via the component's prop) and
   render the A2UI `label` yourself.
+- **Empty label = no visible label.** Forms with a label column hide the field's own label; runs (and the
+  Figma converter) then send `label: ""` + `accessibility.label`. TextField / CheckBox / Toggle must render
+  no label element for `""` and pass `accessibility.label` as the control's `aria-label`.
 
 - **Data-driven variants** (every status badge renders in one color). A2UI v0.9 cannot map a data value
   to an enum (`status: "failed"` → `color: "negative"`). Add a **semantic extension** that takes the value
@@ -150,3 +172,26 @@ export const CATALOG_LIMITATIONS = ['Tag color cannot come from data → add Sta
 
 Hand-write one run: `Row[ Column(no weight) > [Text "Side"], Column(weight 1) > [Text "Main"] ]` and render it.
 Correct: "Side" is as narrow as its text, "Main" takes the rest. A 50/50 split means `weight` is broken.
+
+## Table contract (data display)
+
+A catalog `Table` should be data-driven so one component renders any row count (and the Figma converter can
+target it — `figma-to-a2ui.md` `table`):
+
+```ts
+Table: z.object({
+  columns: z.array(z.object({
+    header: z.string(), field: z.string(),
+    type: z.enum(['text', 'avatar', 'badge', 'toggle', 'checkbox', 'actions']).optional(), // checkbox = row selection
+    subField: z.string().optional(),   // second line (e.g. email under a name)
+    weight: z.number().optional(),     // relative column width
+    actions: z.array(z.string()).optional(), // type 'actions': one button per name
+  })),
+  rows: CommonSchemas.DynamicValue,    // {path} to an array of row objects
+}).strict()
+```
+
+Render each column with the DS's own cell pieces (avatar + name, badge, toggle). **Row actions** (`type:
+'actions'`) render as small DS buttons and dispatch an event named after the action with the row as context —
+without them, the table silently loses every row's edit/delete affordance.
+

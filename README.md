@@ -43,9 +43,10 @@ this flight data"_.
 
 ```
 skill/SKILL.md                 workflow the agent follows
-skill/scripts/a2ui.mjs         describe | check | stories | coverage | patterns
+skill/scripts/a2ui.mjs         describe | check | stories | coverage | patterns | from-figma
+skill/scripts/figma/           extract-tree.js — read-only Figma extractor (runs via the Figma MCP)
 skill/scripts/screenshot.mjs   render stories with the project's Playwright
-skill/references/              A2UI authoring guide · catalog recipe · page patterns · lessons checklist
+skill/references/              A2UI authoring guide · catalog recipe · page patterns · figma-to-a2ui · lessons checklist
 skill/templates/               A2uiPlayground.tsx · guardrails.json
 skill/examples/carbon/         reference catalog + runs + screenshots (IBM Carbon, CSS-grid layout)
 skill/examples/vibe/           reference catalog + runs + screenshots (monday.com Vibe, flexbox)
@@ -53,7 +54,7 @@ skill/examples/vibe/           reference catalog + runs + screenshots (monday.co
 
 ## Compatibility
 
-**Skill version: v1.2.0**
+**Skill version: v1.3.0**
 
 | | Version | Notes |
 |---|---|---|
@@ -75,6 +76,18 @@ templates and examples are what change.
 
 ## Changelog
 
+- **v1.3.0** — **Figma → A2UI converter**: `scripts/figma/extract-tree.js` (read-only, via the Figma MCP) +
+  `a2ui.mjs from-figma` with a per-project `figma-map.json`: auto-layout → Row/Column, widths → weight, wrap
+  grids, column-built tables, repeated items → templates, texts → data, unmapped parts reported. Pattern size
+  guardrails become calibration warnings; `whenToUse` TODOs are rejected. Tested on 3 real product screens:
+  every text carried on 2 of 3, 29/32 on the third.
+  **Coverage alerts** (used in designs + in Storybook + missing from the catalog), a required coverage gate, and
+  converter support for DS extensions: `fill` (page/section headers keep the design's content), `table` (one
+  data-driven Table incl. a row-actions column; contract in the recipe) and `icons`.
+  Verified on two unrelated kits (a product's Settings screens and monday.com Vibe): tables detected by
+  structure (nested cells, header by variant), repeats keep the parent's direction, `fill` works on atomic
+  instances, hidden field labels become `accessibility.label`, detached instances are flagged, the index
+  parser handles package-barrel `componentPath`s, and repeated subtrees are compacted (a real table: 25 → 3 KB).
 - **v1.2.0** — **page patterns**: the team's real pages (e.g. Figma frames) as A2UI structure + example data in
   `<a2ui dir>/patterns/`; `a2ui.mjs patterns` validates them and generates an **A2UI Patterns** section in
   Storybook (docs page: when to use, source link, what the catalog can't express yet); authoring follows the

@@ -4,6 +4,7 @@
 //   "limits": [{ "component": "Button", "where": { "variant": "primary" }, "max": 1, "per": "section" }]
 //   "sectionBoundaries": ["Card", "Tabs"]            // default; root and template items always count
 //   "requireBinding": { "props": { "<TableComponent>": ["rows"] }, "flagCopiedData": true }
+import { childRefs } from "./refs.mjs";
 
 const isBinding = (v) =>
   !!v && typeof v === "object" && typeof v.path === "string";
@@ -91,13 +92,10 @@ export function checkLimits(components, guardrails) {
         counts.set(key, [...(counts.get(key) ?? []), id]);
       }
     });
-    for (const k of ["child", "content", "trigger"])
-      if (typeof c[k] === "string") visit(c[k], here);
-    for (const t of c.tabs ?? [])
-      if (typeof t.child === "string") visit(t.child, t.child); // each panel
-    if (Array.isArray(c.children)) c.children.forEach((ch) => visit(ch, here));
-    else if (c.children?.componentId)
-      visit(c.children.componentId, c.children.componentId); // each item
+    const { refs, templates, tabs } = childRefs(c, components);
+    refs.forEach((r) => visit(r.id, here));
+    tabs.forEach((t) => visit(t, t)); // each panel
+    templates.forEach((t) => visit(t.componentId, t.componentId)); // each item
   };
   visit("root", "root");
 

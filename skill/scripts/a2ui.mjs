@@ -3,23 +3,29 @@
 //   describe --schema <catalog.schema.ts>                      print the catalog for authoring
 //   check    --schema <catalog.schema.ts> --runs <dir|file...> [--guardrails g.json] [--report out.md]
 //   stories  --runs <dir> --out <dir> [--playground ./A2uiPlayground]
+//   from-figma --tree <x.tree.json> --map <figma-map.json> --name <kebab-name> [--schema <catalog.schema.ts>] [--storybook <url> | --index <index.json>] [--out <patterns dir>]
+//            convert an extracted Figma frame (scripts/figma/extract-tree.js) into a pattern
 //   patterns --schema <catalog.schema.ts> --dir <patterns dir> [--guardrails g.json] [--out <a2ui dir>] [--playground ./A2uiPlayground] [--schemaImport ./catalog.schema]
 //            lint + validate patterns; with --out, generate "A2UI Patterns/<Name>" stories
-//   coverage --schema <catalog.schema.ts> (--storybook <url> | --index <index.json>) --runs <dir> [--report COVERAGE.md]
+//   coverage --schema <catalog.schema.ts> (--storybook <url> | --index <index.json>) --runs <dir> [--figma <trees dir>] [--map figma-map.json] [--report COVERAGE.md]
 import {
   readFileSync,
   readdirSync,
   statSync,
   writeFileSync,
   existsSync,
+  mkdirSync,
 } from "node:fs";
 import { join, basename } from "node:path";
 import { loadCatalog } from "./lib/load-catalog.mjs";
 import { describeCatalog } from "./lib/describe.mjs";
 import { checkRun } from "./lib/check.mjs";
 import { writeStories } from "./lib/stories.mjs";
-import { buildCoverage, renderCoverage } from "./lib/coverage.mjs";
+import { buildCoverage, renderCoverage, dsComponentsFromIndex } from "./lib/coverage.mjs";
 import { loadPatterns, lintPattern, validatePattern, writePatternStories } from "./lib/patterns.mjs";
+import { figmaToPattern } from "./lib/figma/index.mjs";
+import { readTree } from "./lib/figma/tree.mjs";
+import { figmaUsage } from "./lib/coverage-alerts.mjs";
 
 const [cmd, ...rest] = process.argv.slice(2);
 const args = {};
@@ -115,7 +121,15 @@ async function coverage() {
     index = await res.json();
   }
   const runs = runFiles(need("runs")).map((f) => JSON.parse(readFileSync(f, "utf8")));
-  const report = renderCoverage(buildCoverage({ catalog, index, runs }), { catalogId: catalog.id, runCount: runs.length });
+  // --figma <dir of *.tree.json> [--map figma-map.json]: design usage makes the alerts much stronger.
+  const figma = figmaUsage(args.figma);
+  const map = args.map && existsSync(args.map) ? JSON.parse(readFileSync(args.map, "utf8")) : {};
+  const mappedFigma = new Set([
+    ...Object.keys(map.components ?? {}),
+    ...(map.skip ?? []),
+    ...Object.keys(map.icons?.names ?? {}),
+  ]);
+  const report = renderCoverage(buildCoverage({ catalog, index, runs, figma, mappedFigma }), { catalogId: catalog.id, runCount: runs.length });
   if (args.report) writeFileSync(args.report, report + "\n");
   console.log(report);
 }
@@ -142,7 +156,42 @@ async function patterns() {
   process.exit(good.length === list.length ? 0 : 1);
 }
 
+async function fromFigma() {
+  const extracted = readTree(need("tree"));
+  const map = JSON.parse(readFileSync(need("map"), "utf8"));
+  // With --schema, only components whose catalog schema declares `weight` get it (others are wrapped).
+  let acceptsWeight;
+  if (args.schema) {
+    const catalog = await loadCatalog(args.schema);
+    acceptsWeight = (name) => {
+      let s = catalog.apis.get(name)?.schema;
+      while (s && s._def?.typeName !== "ZodObject") s = s._def?.innerType ?? s._def?.schema;
+      return !!s && "weight" in s._def.shape();
+    };
+  }
+  // --storybook <url>: flag Figma components that exist in Storybook but are decomposed.
+  let dsNames;
+  if (args.storybook || args.index) {
+    const idx = args.index
+      ? JSON.parse(readFileSync(args.index, "utf8"))
+      : await (await fetch(`${args.storybook.replace(/\/$/, "")}/index.json`)).json();
+    dsNames = dsComponentsFromIndex(idx).map((c) => c.name);
+  }
+  const pattern = figmaToPattern(extracted, map, need("name"), acceptsWeight, dsNames);
+  const json = JSON.stringify(pattern, null, 1) + "\n";
+  if (args.out) {
+    mkdirSync(args.out, { recursive: true });
+    const file = join(args.out, `${pattern.name}.json`);
+    writeFileSync(file, json);
+    console.log(`wrote ${file}`);
+  } else console.log(json);
+  console.log(`components: ${Object.entries(pattern.conversion.usage).map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  pattern.notExpressible.forEach((n) => console.log(`  note: ${n}`));
+  console.log('next: write "whenToUse", then run `patterns` to validate and render it');
+}
+
 const commands = {
+  "from-figma": fromFigma,
   patterns,
   coverage,
   describe: async () =>
@@ -159,7 +208,7 @@ const commands = {
 };
 
 if (!commands[cmd]) {
-  console.error("usage: a2ui.mjs <describe|check|stories|coverage|patterns> ...  (see header)");
+  console.error("usage: a2ui.mjs <describe|check|stories|coverage|patterns|from-figma> ...  (see header)");
   process.exit(2);
 }
 await commands[cmd]();

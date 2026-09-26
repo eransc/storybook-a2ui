@@ -28,7 +28,11 @@ export function lintPattern(p) {
     problems.push(`name "${p.name}" must be kebab-case`);
   if (Array.isArray(p.components) && !p.components.some((c) => c.id === "root"))
     problems.push('no component with id "root"');
-  if (typeof p.whenToUse === "string" && p.whenToUse.length < 40)
+  if (typeof p.whenToUse === "string" && /^\s*TODO/i.test(p.whenToUse))
+    problems.push(
+      '"whenToUse" is still a TODO — describe the job this page does and its regions',
+    );
+  else if (typeof p.whenToUse === "string" && p.whenToUse.length < 40)
     problems.push(
       '"whenToUse" is too short — describe the page and its regions so an agent can choose it',
     );
@@ -53,12 +57,24 @@ export function patternMessages(p, catalogId) {
 }
 
 /** Schema/refs/bindings/guardrail check of a pattern, same rules as runs. */
-export function validatePattern(p, catalog, guardrails) {
-  return checkRun(
+export function validatePattern(p, catalog, guardrails = {}) {
+  // Size limits exist to stop an agent over-building; a real designed page may exceed them.
+  // For patterns they become calibration warnings instead of errors.
+  const { maxDepth, maxComponents, ...rules } = guardrails;
+  const r = checkRun(
     { messages: patternMessages(p, catalog.id) },
     catalog,
-    guardrails,
+    rules,
   );
+  if (maxDepth && r.depth > maxDepth)
+    r.warnings.push(
+      `size: this real page nests ${r.depth} deep but guardrail maxDepth is ${maxDepth} — agent pages like it would fail; raise it if this page is typical`,
+    );
+  if (maxComponents && r.count > maxComponents)
+    r.warnings.push(
+      `size: this real page has ${r.count} components but guardrail maxComponents is ${maxComponents} — raise it if this page is typical`,
+    );
+  return r;
 }
 
 const pascal = (s) => s.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase());
