@@ -11,14 +11,15 @@ plus a report (used / misused / missing components, guardrail hits).
 **You (the agent running this skill) are the model that authors the A2UI.** No API key, no server.
 Say so when reporting: results show what _an_ agent does with the catalog, not the user's production model.
 
-Scripts live next to this file: `SKILL_DIR/scripts/`. Reference implementations: `SKILL_DIR/examples/carbon/` (grid layout, two zod copies) and `SKILL_DIR/examples/vibe/` (flexbox, no Card, metadata-driven).
+Scripts live next to this file: `SKILL_DIR/scripts/`. Optional worked references: `SKILL_DIR/examples/<design-system>/` — illustrations only; nothing in the workflow depends on them.
 
 ```
 setup (once per repo)          per scenario
 ─────────────────────          ─────────────────────────────────────────────
 1 locate Storybook             4 datasets   data/<scenario>/<dataset>.json
-2 install + catalog            5 author     runs/<scenario>--<dataset>.json
+2 install + catalog            5 author     runs/<scenario>--<dataset>.json   (following a pattern, if any)
 3 describe catalog             6 check → stories → render → report
+3b page patterns (optional, recommended for full pages)
 ```
 
 ## 1. Locate the Storybook
@@ -59,6 +60,21 @@ node SKILL_DIR/scripts/a2ui.mjs describe --schema <a2ui dir>/catalog.schema.ts
 
 Read the output — it is the only vocabulary you may use.
 
+## 3b. Page patterns (optional — strongly recommended for full, multi-region pages)
+
+Patterns are the team's real pages (usually design-tool frames) as A2UI structure + example data, **saved in
+this Storybook project so the agent knows how the team builds pages**. In testing they made full-page output
+consistent and on-brand; on simple pages the effect is small. Read **`SKILL_DIR/references/patterns.md`**,
+extract 2–5 patterns into `<a2ui dir>/patterns/<name>.json`, then:
+
+```bash
+node SKILL_DIR/scripts/a2ui.mjs patterns --schema $S/catalog.schema.ts --dir $S/patterns --guardrails $S/guardrails.json --out $S
+```
+This validates every pattern against the catalog and guardrails and generates one story per pattern under
+**A2UI Patterns / <Name>** (docs page: when to use, source link, what the catalog can't express yet).
+The stories import the JSON, so editing a pattern updates Storybook live. Compare each story with its source
+frame **before** relying on it — a catalog bug in a pattern is copied into every page built from it.
+
 ## 4. Datasets
 
 `<a2ui dir>/data/<scenario>/<dataset>.json`. Use the user's data if given. Otherwise synthesize
@@ -70,6 +86,8 @@ Read the output — it is the only vocabulary you may use.
 Read **`SKILL_DIR/references/a2ui-authoring.md`**. For each dataset, look at the data and write
 `<a2ui dir>/runs/<scenario>--<dataset>.json` (kebab-case names; `--` separates dataset).
 Choose the UI a good agent would choose _for that data_. Record honest `wanted` gaps.
+If `<a2ui dir>/patterns/` exists: pick the closest pattern by its `whenToUse` (or none), keep its skeleton,
+adapt it to the data, and set `"pattern": "<name>"` in the run.
 
 ## 6. Check → stories → render → report
 
@@ -82,7 +100,8 @@ node SKILL_DIR/scripts/screenshot.mjs --project <repo with playwright> --url htt
 ```
 
 - `check` exits 1 on errors. Fix the run (not the checker) and re-check; at most 3 rounds, then report what still fails.
-- Story ids: `a2ui-playground-<scenario>--<dataset>`. `✗ … not indexed` → restart Storybook (see step 1).
+- Story ids: use the ones `stories` prints (Storybook turns digits into separate words: `A1` → `a-1`).
+  `✗ … not indexed` from `screenshot.mjs` → check the id first, then restart Storybook (see step 1).
 - **Look at every screenshot** before claiming success. A validated run can still look wrong (catalog bug → fix `catalog.tsx`).
   `--project` can be ANY local repo with `@playwright/test` (it only borrows the library; uses installed Chrome).
   No Playwright anywhere? Give the user the story URLs instead and say the visual check was not done.
@@ -108,7 +127,7 @@ Report to the user:
 | `preferTable: {component, minItems}` | warn when a template repeats ≥ minItems items    |
 | `banned: [Component]`                | error on use                                     |
 | `limits: [{component, where, max, per}]` | error when more than `max` match per `section` (or `surface`) — e.g. **one primary Button per section**. Sections: root, each `sectionBoundaries` component (default Card, Tabs), each Tabs panel, each repeated template item |
-| `requireBinding: {props, flagCopiedData}` | error when a listed prop (e.g. `DataTable.rows`) is a literal instead of `{path}`; warn when a literal string equals a value in the data (copied instead of bound) |
+| `requireBinding: {props, flagCopiedData}` | error when a listed prop (e.g. a table component's `rows`) is a literal instead of `{path}`; warn when a literal string equals a value in the data (copied instead of bound) |
 
 Propose new rules from real runs; do not invent rules the runs never needed.
 

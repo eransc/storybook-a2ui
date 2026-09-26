@@ -142,4 +142,5 @@ export const CATALOG_EXCLUDED = {
 export const CATALOG_LIMITATIONS = [
   'Label color cannot be derived from data (A2UI v0.9) → add a semantic StatusLabel(status)',
   'Table is display-only: no sorting, selection or pagination',
+  'Row/Column `weight` is not implemented in this example catalog — see catalog-recipe §3 for the weighted() helper',
 ];

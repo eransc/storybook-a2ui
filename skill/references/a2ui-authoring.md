@@ -61,3 +61,9 @@ Author each dataset separately, the way a real agent would after seeing the data
 unknown component · unknown prop · bad enum value · missing `root` · dangling
 child id · cycle · orphan · binding to a path that resolves to nothing ·
 template path that is not an array · guardrail violations.
+
+## Following a page pattern
+
+If the project has `patterns/` (see `patterns.md`): read each `whenToUse`, pick the closest for the prompt
+(or none), keep its skeleton and conventions, adapt regions and data shape to your data, and set
+`"pattern": "<name>"` in the run. Deviate only where the task needs it.

@@ -43,9 +43,9 @@ this flight data"_.
 
 ```
 skill/SKILL.md                 workflow the agent follows
-skill/scripts/a2ui.mjs         describe | check | stories | coverage
+skill/scripts/a2ui.mjs         describe | check | stories | coverage | patterns
 skill/scripts/screenshot.mjs   render stories with the project's Playwright
-skill/references/              A2UI authoring guide · catalog recipe · lessons checklist
+skill/references/              A2UI authoring guide · catalog recipe · page patterns · lessons checklist
 skill/templates/               A2uiPlayground.tsx · guardrails.json
 skill/examples/carbon/         reference catalog + runs + screenshots (IBM Carbon, CSS-grid layout)
 skill/examples/vibe/           reference catalog + runs + screenshots (monday.com Vibe, flexbox)
@@ -53,7 +53,7 @@ skill/examples/vibe/           reference catalog + runs + screenshots (monday.co
 
 ## Compatibility
 
-**Skill version: v1.1.0**
+**Skill version: v1.2.0**
 
 | | Version | Notes |
 |---|---|---|
@@ -75,6 +75,12 @@ templates and examples are what change.
 
 ## Changelog
 
+- **v1.2.0** — **page patterns**: the team's real pages (e.g. Figma frames) as A2UI structure + example data in
+  `<a2ui dir>/patterns/`; `a2ui.mjs patterns` validates them and generates an **A2UI Patterns** section in
+  Storybook (docs page: when to use, source link, what the catalog can't express yet); authoring follows the
+  closest pattern. `weight` (flex-grow) is now a required catalog rule with a layout probe. Built-in `a11y`
+  warning for empty labels; `stories` prints real Storybook ids; output folders are created as needed; all
+  skill docs, scripts and templates are design-system-agnostic.
 - **v1.1.0** — two guardrails: `limits` (e.g. one primary Button per section) and `requireBinding`
   (table rows must be bound; warns when data is copied into the UI as literals).
 - **v1.0.0** — skill, `describe` / `check` / `stories` / `coverage`, Carbon + Vibe examples.

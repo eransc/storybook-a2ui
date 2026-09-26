@@ -3,7 +3,7 @@
 //
 //   "limits": [{ "component": "Button", "where": { "variant": "primary" }, "max": 1, "per": "section" }]
 //   "sectionBoundaries": ["Card", "Tabs"]            // default; root and template items always count
-//   "requireBinding": { "props": { "DataTable": ["rows"] }, "flagCopiedData": true }
+//   "requireBinding": { "props": { "<TableComponent>": ["rows"] }, "flagCopiedData": true }
 
 const isBinding = (v) =>
   !!v && typeof v === "object" && typeof v.path === "string";

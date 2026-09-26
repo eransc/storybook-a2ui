@@ -1,5 +1,5 @@
 // Generate one CSF stories file per scenario from runs/<scenario>--<dataset>.json.
-import { readdirSync, writeFileSync } from "node:fs";
+import { readdirSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, relative, dirname } from "node:path";
 
 const pascal = (s) =>
@@ -8,6 +8,12 @@ const pascal = (s) =>
     .replace(/\W/g, "");
 const title = (s) =>
   s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+
+/** Mirror Storybook's id rule: export "A1" → story name "A 1" → id "a-1". */
+const sanitize = (s) => s.toLowerCase().replace(/[ '`~!@#$%^&*()+=[\]{};:"|\\,.<>/?_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+const storyName = (exportName) => exportName.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2");
+export const storyId = (title, exportName) => `${sanitize(title)}--${sanitize(storyName(exportName))}`;
 
 export function groupRuns(runsDir) {
   const groups = new Map();
@@ -29,6 +35,7 @@ export function writeStories({
   playgroundImport = "./A2uiPlayground",
   section = "A2UI Playground",
 }) {
+  mkdirSync(outDir, { recursive: true });
   const written = [];
   for (const [scenario, runs] of groupRuns(runsDir)) {
     const outFile = join(outDir, `A2UI.${pascal(scenario)}.stories.tsx`);
@@ -70,7 +77,7 @@ const story = (run: A2uiRun) => ({
 ${exports}
 `,
     );
-    written.push({ outFile, stories: runs.map((r) => r.dataset) });
+    written.push({ outFile, stories: runs.map((r) => r.dataset), ids: runs.map((r) => storyId(`${section}/${title(scenario)}`, pascal(r.dataset))) });
   }
   return written;
 }

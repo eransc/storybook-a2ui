@@ -17,7 +17,7 @@ const wordRe = (name) =>
 /**
  * Design-system components from a Storybook index.json. Prefer each story's
  * `componentPath` (the real component file); story titles nest arbitrarily
- * (Carbon: "Components/DataTable/Basic"), so the title is only a fallback.
+ * (e.g. "Components/Table/Basic"), so the title is only a fallback.
  */
 export function dsComponentsFromIndex(index, section = "A2UI Playground") {
   const stories = Object.values(index.entries ?? index.stories ?? {}).filter(
@@ -25,7 +25,7 @@ export function dsComponentsFromIndex(index, section = "A2UI Playground") {
   );
   const segs = (title) => title.split("/").map((x) => norm(x));
   // Name from componentPath, accepted only when it also appears in the story title.
-  // Rejects package barrels (Vibe: every story → @vibe/core/dist/src/index.js → "src").
+  // Rejects package barrels (e.g. stories importing from a package root → ".../dist/src/index.js" → "src").
   const fromPath = (e) => {
     if (!e.componentPath) return null;
     const parts = e.componentPath.split("/");
@@ -39,7 +39,7 @@ export function dsComponentsFromIndex(index, section = "A2UI Playground") {
   };
   const named = stories.map((e) => ({ e, name: fromPath(e) }));
   // If most stories resolve by path, path-less leftovers are variants/docs
-  // (Carbon: ".../Feature Flag"), not components — skip them.
+  // (e.g. ".../Feature Flag"), not components — skip them.
   const pathRatio = named.filter((x) => x.name).length / Math.max(1, named.length);
   const byName = new Map();
   for (const { e, name: pathName } of named) {

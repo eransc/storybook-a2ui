@@ -3,6 +3,8 @@
 //   describe --schema <catalog.schema.ts>                      print the catalog for authoring
 //   check    --schema <catalog.schema.ts> --runs <dir|file...> [--guardrails g.json] [--report out.md]
 //   stories  --runs <dir> --out <dir> [--playground ./A2uiPlayground]
+//   patterns --schema <catalog.schema.ts> --dir <patterns dir> [--guardrails g.json] [--out <a2ui dir>] [--playground ./A2uiPlayground] [--schemaImport ./catalog.schema]
+//            lint + validate patterns; with --out, generate "A2UI Patterns/<Name>" stories
 //   coverage --schema <catalog.schema.ts> (--storybook <url> | --index <index.json>) --runs <dir> [--report COVERAGE.md]
 import {
   readFileSync,
@@ -17,6 +19,7 @@ import { describeCatalog } from "./lib/describe.mjs";
 import { checkRun } from "./lib/check.mjs";
 import { writeStories } from "./lib/stories.mjs";
 import { buildCoverage, renderCoverage } from "./lib/coverage.mjs";
+import { loadPatterns, lintPattern, validatePattern, writePatternStories } from "./lib/patterns.mjs";
 
 const [cmd, ...rest] = process.argv.slice(2);
 const args = {};
@@ -117,7 +120,30 @@ async function coverage() {
   console.log(report);
 }
 
+async function patterns() {
+  const catalog = await loadCatalog(need("schema"));
+  const guardrails = args.guardrails && existsSync(args.guardrails) ? JSON.parse(readFileSync(args.guardrails, "utf8")) : {};
+  const list = loadPatterns(need("dir"));
+  const good = [];
+  for (const item of list) {
+    const problems = lintPattern(item.pattern);
+    const v = problems.some((x) => x.startsWith("missing")) ? { errors: [], warnings: [] } : validatePattern(item.pattern, catalog, guardrails);
+    const errors = [...problems, ...v.errors];
+    console.log(`${errors.length ? "✗" : "✓"} ${item.file}`);
+    errors.forEach((e) => console.log(`  - ERROR ${e}`));
+    v.warnings.forEach((w) => console.log(`  - warn  ${w}`));
+    if (!errors.length) good.push(item);
+  }
+  if (args.out) {
+    const written = writePatternStories(good, { outDir: args.out, playgroundImport: args.playground, schemaImport: args.schemaImport });
+    written.forEach((f) => console.log(`wrote ${f}`));
+    console.log('Storybook section: "A2UI Patterns" — compare each story with its source frame.');
+  }
+  process.exit(good.length === list.length ? 0 : 1);
+}
+
 const commands = {
+  patterns,
   coverage,
   describe: async () =>
     console.log(describeCatalog(await loadCatalog(need("schema")))),
@@ -128,14 +154,12 @@ const commands = {
       outDir: need("out"),
       playgroundImport: args.playground,
     });
-    written.forEach((w) =>
-      console.log(`wrote ${w.outFile} (${w.stories.join(", ")})`),
-    );
+    written.forEach((w) => console.log(`wrote ${w.outFile}\n  story ids: ${w.ids.join(" ")}`));
   },
 };
 
 if (!commands[cmd]) {
-  console.error("usage: a2ui.mjs <describe|check|stories|coverage> ...  (see header)");
+  console.error("usage: a2ui.mjs <describe|check|stories|coverage|patterns> ...  (see header)");
   process.exit(2);
 }
 await commands[cmd]();

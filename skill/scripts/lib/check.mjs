@@ -99,6 +99,11 @@ export function checkRun(run, catalog, guardrails = {}) {
       if (c[prop] === undefined)
         errors.push(`guardrail: "${c.id}" (${c.component}) must set "${prop}"`);
     }
+    // Built-in a11y: a control with an empty label has no accessible name.
+    if (c.label === "")
+      warnings.push(
+        `a11y: "${c.id}" (${c.component}) has an empty label — screen readers announce it with no name; bind or write a real label`,
+      );
     if (guardrails.banned?.includes(c.component))
       errors.push(`guardrail: "${c.id}" uses banned ${c.component}`);
   }
