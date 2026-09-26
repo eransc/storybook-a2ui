@@ -1,6 +1,6 @@
 ---
 name: storybook-a2ui
-description: Use Storybook as a playground for A2UI (Agent-to-UI) interfaces built from the project's OWN design-system components. Builds an A2UI v0.9 catalog from the Storybook components, turns a prompt + one or more datasets into A2UI message streams, validates them against the catalog and guardrails, and renders each result as a real Storybook story (one per dataset). Reports which components the agent used, misused, or wished it had. Use when the user wants to prototype agent-generated UI with their design system, try "what UI would an agent build for this data", build or harden an A2UI catalog, or define guardrails for agent-rendered UI — even if they don't say "A2UI" (e.g. "generative UI from my components", "agent UI playground in Storybook").
+description: Use Storybook as a playground for A2UI (Agent-to-UI) layouts built from the project's OWN design-system components. Three jobs — (1) generate an A2UI v0.9 catalog from the Storybook components, (2) convert Figma screens into A2UI layout patterns saved in the Storybook project, (3) turn a prompt (+ optional data) into new layouts rendered as real Storybook stories, validated against the catalog and guardrails, with a report of used / misused / missing components. Use when the user wants generative or agent UI from their design system, "what would an agent build for this data", an A2UI catalog, page patterns from Figma, or guardrails for agent-rendered UI — even if they don't say "A2UI" (e.g. "generative UI from my components", "agent UI playground in Storybook", "turn this Figma page into a layout example").
 ---
 
 # storybook-a2ui
@@ -13,14 +13,25 @@ Say so when reporting: results show what _an_ agent does with the catalog, not t
 
 Scripts live next to this file: `SKILL_DIR/scripts/`. Optional worked references: `SKILL_DIR/examples/<design-system>/` — illustrations only; nothing in the workflow depends on them.
 
+## Three jobs — route the request
+
+| The user wants… | Do | Output (in `<a2ui dir>/`) |
+|---|---|---|
+| **A. A catalog from Storybook** ("set up A2UI", "what can an agent use") | steps 1 → 2 → 3 | `catalog.schema.ts`, `catalog.tsx`, `COVERAGE.md` |
+| **B. Patterns from Figma** (a Figma link: "use this page as an example") | A first if no catalog, then step 3b | `figma-map.json`, `figma/*.tree.json`, `patterns/*.json` + **A2UI Patterns** stories |
+| **C. New layouts from a prompt** ("build a users page", "show these flights") | A first if no catalog, then steps 4 → 5 → 6 | `runs/*.json` + **A2UI Playground** stories, `runs/REPORT.md` |
+
 ```
-setup (once per repo)          per scenario
-─────────────────────          ─────────────────────────────────────────────
-1 locate Storybook             4 datasets   data/<scenario>/<dataset>.json
-2 install + catalog            5 author     runs/<scenario>--<dataset>.json   (following a pattern, if any)
-3 describe catalog             6 check → stories → render → report
-3b page patterns (optional, recommended for full pages)
+A catalog (once)            B patterns (per Figma page)      C prompt → layouts (per idea)
+──────────────────          ───────────────────────────      ─────────────────────────────
+1 locate Storybook          figma-map.json (once)            4 datasets (user's, or empty/few/many)
+2 install + catalog         extract frame (read-only)        5 author runs — follow a pattern if one fits
+  + coverage gate           from-figma → whenToUse           6 check → stories → screenshot → report
+3 describe catalog          patterns → stories
 ```
+
+For C, a prompt alone is enough: synthesize the datasets (step 4). If patterns exist, the layout follows the
+closest one — that is what makes full pages look like the team's own.
 
 ## 1. Locate the Storybook
 

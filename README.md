@@ -14,6 +14,14 @@ Same prompt, same three datasets, two design systems. The agent chose an empty s
 | **IBM Carbon** | ![](skill/examples/carbon/screenshots/a2ui-playground-flights--empty.png) | ![](skill/examples/carbon/screenshots/a2ui-playground-flights--few.png) | ![](skill/examples/carbon/screenshots/a2ui-playground-flights--many.png) |
 | **monday.com Vibe** | ![](skill/examples/vibe/screenshots/a2ui-playground-flights--empty.png) | ![](skill/examples/vibe/screenshots/a2ui-playground-flights--few.png) | ![](skill/examples/vibe/screenshots/a2ui-playground-flights--many.png) |
 
+## What it does — three jobs
+
+| Ask your agent | You get |
+|---|---|
+| **1. "Set up A2UI for my Storybook"** | an A2UI catalog generated from your Storybook components (`catalog.schema.ts` + `catalog.tsx`) and a coverage report of what's missing |
+| **2. "Use this Figma page as a layout example"** + a Figma link | the page converted to an A2UI **pattern** (structure + example data), shown under **A2UI Patterns** in Storybook, so the agent learns how your team builds pages |
+| **3. "Build a users page"** (+ your data, optional) | new layouts built only from your components, one Storybook story per dataset, validated, with a report |
+
 ## How it works
 
 ```
@@ -36,8 +44,11 @@ git clone https://github.com/eransc/storybook-a2ui ~/Code/storybook-a2ui
 ln -s ~/Code/storybook-a2ui/skill ~/.claude/skills/storybook-a2ui   # Claude Code
 ```
 
-Then, in a repo with a React Storybook: _"use storybook-a2ui to show what an agent would build for
-this flight data"_.
+Or with the [skills CLI](https://github.com/vercel-labs/skills): `npx skills add eransc/storybook-a2ui`.
+
+Then, in a repo with a React Storybook, ask for one of the three jobs — e.g. _"set up storybook-a2ui"_,
+_"turn this Figma page into an A2UI pattern: &lt;link&gt;"_, or _"use storybook-a2ui to show what an agent would
+build for this flight data"_. Figma extraction needs the Figma MCP server connected (read-only).
 
 ## Layout
 
